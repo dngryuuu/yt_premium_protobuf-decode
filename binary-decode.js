@@ -5529,11 +5529,13 @@ const field1806 = item18[unknown]?.find(
     x => x.no === 1806
 );
 
-console.log(
-    "[DEBUG] 1806 DATA:",
-    field1806?.data
-);
+if (field1806?.data) {
+    console.log("[YT PREMIUM] 1806 BEFORE:", field1806.data);
 
+    field1806.data[2] = 1;
+
+    console.log("[YT PREMIUM] 1806 AFTER:", field1806.data);
+}
 
 
 this.needProcess = !0;
