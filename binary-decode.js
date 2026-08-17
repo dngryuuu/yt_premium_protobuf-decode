@@ -5522,9 +5522,14 @@ ${o[0][b][0]}`
 // =====================================================
 // PREMIUM
 // =====================================================
-console.log("[YT PREMIUM] ===== get_setting START =====");
-console.log("[YT PREMIUM] settingItems:", this.message.settingItems);
 const unknown = f.symbol;
+
+console.log("[DEBUG] message:", this.message);
+console.log("[DEBUG] root unknown:", this.message[unknown]);
+console.log(
+    "[DEBUG] root 1806:",
+    this.message[unknown]?.filter(x => x.no === 1806)
+);
 
 
 // ---------- helper protobuf ----------
