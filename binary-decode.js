@@ -5540,9 +5540,6 @@ if (field1806?.data) {
 // ================================
 // ADD PREMIUM MEMBER HUB
 // ================================
-
-const unknown = f.symbol;
-
 // protobuf helpers
 const encodeVarint = value => {
     const out = [];
