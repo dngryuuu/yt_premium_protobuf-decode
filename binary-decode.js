@@ -5537,7 +5537,156 @@ if (field1806?.data) {
     console.log("[YT PREMIUM] 1806 AFTER:", field1806.data);
 }
 
+// ================================
+// ADD PREMIUM MEMBER HUB
+// ================================
 
+const unknown = f.symbol;
+
+// protobuf helpers
+const encodeVarint = value => {
+    const out = [];
+
+    while (value > 127) {
+        out.push((value & 127) | 128);
+        value = Math.floor(value / 128);
+    }
+
+    out.push(value);
+    return new Uint8Array(out);
+};
+
+const concatBytes = (...arrays) => {
+    const length = arrays.reduce((n, a) => n + a.length, 0);
+    const out = new Uint8Array(length);
+
+    let pos = 0;
+
+    for (const a of arrays) {
+        out.set(a, pos);
+        pos += a.length;
+    }
+
+    return out;
+};
+
+const fieldVarint = (no, value) => {
+    return concatBytes(
+        encodeVarint(no << 3),
+        encodeVarint(value)
+    );
+};
+
+const fieldBytes = (no, data) => {
+    return concatBytes(
+        encodeVarint((no << 3) | 2),
+        encodeVarint(data.length),
+        data
+    );
+};
+
+const fieldString = (no, value) => {
+    return fieldBytes(
+        no,
+        new TextEncoder().encode(value)
+    );
+};
+
+
+// --------------------------------
+// 61520386 payload
+// --------------------------------
+
+// 6.4
+const premium6_4 = concatBytes(
+    fieldVarint(1, 1786985571792183),
+    fieldBytes(2, new Uint8Array([
+        0x86, 0xEF, 0x4C, 0x02
+    ])),
+    fieldBytes(3, new Uint8Array([
+        0x42, 0x68, 0x3D, 0xB1
+    ]))
+);
+
+// 6
+const premium6 = concatBytes(
+    fieldVarint(1, 12),
+    fieldVarint(2, 101016),
+    fieldVarint(3, 21),
+    fieldBytes(4, premium6_4)
+);
+
+// 1.2
+const premium1_2 = concatBytes(
+    fieldVarint(1, 10),
+    fieldVarint(2, 119907),
+    fieldVarint(3, 23),
+    fieldBytes(4, premium6_4),
+    fieldString(25, " T  ")
+);
+
+// 1
+const premium1 = concatBytes(
+    fieldBytes(2, premium1_2),
+    fieldBytes(
+        79216710,
+        fieldVarint(1, 1)
+    )
+);
+
+// 3
+const premium3 = fieldString(
+    1,
+    "Lợi ích của gói Premium"
+);
+
+// 48687626
+const premium48687626 = fieldString(
+    2,
+    "FEpremium_member_hub"
+);
+
+
+// --------------------------------
+// Toàn bộ message 61520386
+// --------------------------------
+
+const premium61520386 = concatBytes(
+    fieldBytes(1, premium1),
+    fieldBytes(48687626, premium48687626),
+    fieldBytes(3, premium3),
+    fieldVarint(4, 10171),
+    fieldBytes(6, premium6),
+    fieldBytes(
+        8,
+        fieldVarint(1, 1150)
+    )
+);
+
+
+// --------------------------------
+// Thêm vào settingItems
+// --------------------------------
+
+const premiumItem = J.create();
+
+premiumItem[unknown] = [{
+    no: 61520386,
+    wireType: u.LengthDelimited,
+    data: premium61520386
+}];
+
+this.message.settingItems.push(premiumItem);
+
+console.log(
+    "[YT PREMIUM] 61520386 ADDED:",
+    premium61520386
+);
+
+console.log(
+    "[YT PREMIUM] PREMIUM ITEM:",
+    premiumItem
+);
 this.needProcess = !0;
 
 return this;
