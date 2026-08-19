@@ -1,3 +1,4 @@
+// Build: 2025/3/30 17:50:34
 (() => {
   var Ar = Object.defineProperty;
   var jr = (l, e, t) => e in l ? Ar(l, e, {
@@ -7,115 +8,6 @@
       value: t
   }) : l[e] = t;
   var ce = (l, e, t) => (jr(l, typeof e != "symbol" ? e + "" : e, t), t);
-  function fixPremiumLogo(l) {
-    if (!l || typeof l != "object") {
-        console.log("❌ fixPremiumLogo: Invalid input");
-        return;
-    }
-    
-    console.log("🔍 Searching for Premium logo...");
-    let found = false;
-    
-    // Hàm đệ quy duyệt tất cả object
-    function searchAndFix(obj, path = '') {
-        if (!obj || typeof obj !== 'object') return;
-        
-        // Kiểm tra nếu đây là unknown field (có no, wireType, data)
-        if (obj.hasOwnProperty('no') && obj.hasOwnProperty('wireType') && obj.hasOwnProperty('data')) {
-            // Field number 123267149 là TopbarRenderer
-            if (obj.no === 123267149 && obj.wireType === 2) {
-                console.log(`📍 Found TopbarRenderer (field ${obj.no}) at ${path}`);
-                try {
-                    // data là Uint8Array, cần parse tiếp
-                    // Parse data thành object để tìm LogoRenderer (95143705)
-                    const parsed = parseUnknownData(obj.data);
-                    if (parsed && parsed.hasOwnProperty('95143705')) {
-                        const logo = parsed['95143705'];
-                        if (logo && logo.hasOwnProperty('1') && logo['1'].hasOwnProperty('1')) {
-                            const currentType = logo['1']['1'];
-                            console.log(`🎨 Current icon_type: ${currentType}`);
-                            if (currentType === 158) {
-                                console.log("🔄 Changing icon_type: 158 → 537");
-                                logo['1']['1'] = 537;
-                                found = true;
-                                // Cần ghi lại data đã sửa
-                                obj.data = rebuildUnknownData(parsed);
-                                console.log("✅ Premium logo applied!");
-                            } else if (currentType === 537) {
-                                console.log("ℹ️ Logo already Premium");
-                                found = true;
-                            }
-                        }
-                    }
-                } catch(e) {
-                    console.log(`⚠️ Error parsing unknown data: ${e.message}`);
-                }
-            }
-            return;
-        }
-        
-        // Đệ quy qua tất cả properties
-        for (let key in obj) {
-            if (obj.hasOwnProperty(key) && typeof obj[key] === 'object') {
-                searchAndFix(obj[key], path + '.' + key);
-            }
-        }
-    }
-    
-    // Hàm parse unknown data (Uint8Array -> object)
-    function parseUnknownData(data) {
-        try {
-            // Dùng reader để parse
-            const reader = new Ke(data);
-            const result = {};
-            while (reader.pos < data.length) {
-                const [fieldNo, wireType] = reader.tag();
-                if (wireType === 2) { // LengthDelimited
-                    const bytes = reader.bytes();
-                    // Parse tiếp nếu là message
-                    result[fieldNo] = parseUnknownData(bytes);
-                } else if (wireType === 0) { // Varint
-                    result[fieldNo] = reader.uint32();
-                } else if (wireType === 1) { // Bit64
-                    result[fieldNo] = reader.fixed64();
-                } else if (wireType === 5) { // Bit32
-                    result[fieldNo] = reader.fixed32();
-                }
-            }
-            return result;
-        } catch(e) {
-            return null;
-        }
-    }
-    
-    // Hàm rebuild unknown data từ object
-    function rebuildUnknownData(obj) {
-        const writer = new Je();
-        for (let key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                const fieldNo = parseInt(key);
-                const value = obj[key];
-                if (typeof value === 'object') {
-                    writer.tag(fieldNo, 2);
-                    const subData = rebuildUnknownData(value);
-                    writer.uint32(subData.length);
-                    writer.raw(subData);
-                } else if (typeof value === 'number') {
-                    writer.tag(fieldNo, 0);
-                    writer.uint32(value);
-                }
-            }
-        }
-        return writer.finish();
-    }
-    
-    // Bắt đầu tìm kiếm
-    searchAndFix(l);
-    
-    if (!found) {
-        console.log("❌ Could not find/apply Premium logo");
-    }
-}
   (function(l) {
       function e() {}
 
@@ -5384,7 +5276,6 @@
               super(e, t)
           }
           async pure() {
-            fixPremiumLogo(this.message);
               return this.iterate(this.message, "richItemContents", e => {
                   let t = e.richItemContents;
                   if (!Array.isArray(t)) return !1;
@@ -5477,7 +5368,6 @@ ${o[0][b][0]}`
               super(e, t)
           }
           async pure() {
-            fixPremiumLogo(this.message);
               return this.removeAd(), this.addPlayAbility(), this.addTranslateCaption(), this.needProcess = !0, this
           }
           removeAd() {
@@ -5560,7 +5450,6 @@ ${o[0][b][0]}`
               super(e, t)
           }
           async pure() {
-            fixPremiumLogo(this.message);
               let e = this.message.entries?.length;
               if (e)
                   for (let t = e - 1; t >= 0; t--) this.message.entries[t].command?.reelWatchEndpoint?.overlay || (this.message.entries.splice(t, 1), this.needProcess = !0);
@@ -5572,7 +5461,60 @@ ${o[0][b][0]}`
               super(e, t)
           }
           async pure() {
-            fixPremiumLogo(this.message);
+
+            w.debug("[TopbarPatch] ===== START =====");
+
+        let topbar = this.message?.["123267149"];
+
+        w.debug("[TopbarPatch] 123267149:", topbar);
+
+        if (topbar) {
+            let logo = topbar["95143705"];
+
+            w.debug("[TopbarPatch] 95143705:", logo);
+
+            if (logo) {
+                let icon = logo["1"];
+
+                w.debug("[TopbarPatch] 95143705.1:", icon);
+
+                if (icon) {
+                    let oldValue = icon["1"];
+
+                    w.debug(
+                        "[TopbarPatch] 95143705.1.1 BEFORE:",
+                        oldValue
+                    );
+
+                    if (oldValue === 158) {
+                        icon["1"] = 537;
+
+                        w.debug(
+                            "[TopbarPatch] PATCHED: 158 -> 537"
+                        );
+                    } else {
+                        w.debug(
+                            "[TopbarPatch] SKIP, value =",
+                            oldValue
+                        );
+                    }
+
+                    w.debug(
+                        "[TopbarPatch] 95143705.1.1 AFTER:",
+                        icon["1"]
+                    );
+                } else {
+                    w.debug("[TopbarPatch] 95143705.1 NOT FOUND");
+                }
+            } else {
+                w.debug("[TopbarPatch] 95143705 NOT FOUND");
+            }
+        } else {
+            w.debug("[TopbarPatch] 123267149 NOT FOUND");
+        }
+
+        w.debug("[TopbarPatch] ===== END =====");
+
               let e = ["SPunlimited"];
               return this.argument.blockUpload && e.push("FEuploads"), this.argument.blockImmersive && e.push("FEmusic_immersive"), this.argument.blockShorts && e.push("FEshorts"), this.iterate(this.message, "rendererItems", t => {
                   for (let n = t.rendererItems.length - 1; n >= 0; n--) {
@@ -5587,7 +5529,6 @@ ${o[0][b][0]}`
               super(e, t)
           }
           async pure() {
-            fixPremiumLogo(this.message);
               this.iterate(this.message.settingItems, "categoryId", t => {
                   if (t.categoryId === 10135) {
                       let n = ye.create({
@@ -5632,14 +5573,13 @@ ${o[0][b][0]}`
               return this.message.settingItems.push(e), this.needProcess = !0, this
           }
       },
-      Ve = class extends G {
+      Ve = class extends G   {
           player;
           next;
           constructor(e = Fr, t = "Watch") {
               super(e, t), this.player = new be, this.next = new ge
           }
           async pure() {
-            fixPremiumLogo(this.message);
               for (let e of this.message.contents) e.player && (this.player.message = e.player, await this.player.pure()), e.next && (this.next.message = e.next, await this.next.pure()), this.needProcess = !0;
               return this
           }
