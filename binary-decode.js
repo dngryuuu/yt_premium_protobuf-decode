@@ -1,4 +1,3 @@
-// Build: 2025/3/30 17:50:34
 (() => {
   var Ar = Object.defineProperty;
   var jr = (l, e, t) => e in l ? Ar(l, e, {
@@ -17,80 +16,70 @@ function fixPremiumLogo(l) {
     }
     
     console.log("🔍 Searching for Premium logo...");
-    
-    // Log tất cả các key cấp 1 để xem có gì
-    console.log("📋 Top-level keys:", Object.keys(l));
-    
-    let e = [l];
     let found = false;
-    let depth = 0;
-    let foundTopbar = false;
-    let foundLogo = false;
-    let foundIcon = false;
+    let e = [l];
     
     for (; e.length;) {
         let t = e.pop();
-        depth++;
-        
         for (let n in t) {
             if (t.hasOwnProperty(n)) {
-                // Log tất cả các field số để debug
-                if (/^\d+$/.test(n) && typeof t[n] === 'object') {
-                    // console.log(`Field ${n} found at depth ${depth}`);
-                }
-                
+                // Tìm TopbarRenderer (field 123267149)
                 if (n === "123267149") {
-                    foundTopbar = true;
-                    console.log("📍 Found TopbarRenderer (field 123267149)");
-                    console.log("🔍 Topbar content:", Object.keys(t[n] || {}));
+                    console.log("📍 Found TopbarRenderer");
+                    const topbar = t[n];
                     
-                    if (t[n]?.["95143705"]) {
-                        foundLogo = true;
-                        console.log("📍 Found LogoRenderer (field 95143705)");
-                        console.log("🔍 Logo content:", Object.keys(t[n]["95143705"] || {}));
+                    // Tìm LogoRenderer (field 95143705)
+                    if (topbar && typeof topbar === "object" && topbar.hasOwnProperty("95143705")) {
+                        console.log("📍 Found LogoRenderer (azwk)");
+                        const logo = topbar["95143705"];
                         
-                        if (t[n]["95143705"]?.["1"]?.["1"] !== undefined) {
-                            foundIcon = true;
-                            const currentType = t[n]["95143705"]["1"]["1"];
-                            console.log(`🎨 Current icon_type: ${currentType}`);
+                        // Kiểm tra icon_type (field 1.1)
+                        if (logo && typeof logo === "object") {
+                            // Lấy IconProto (field 1)
+                            const iconProto = logo["1"];
                             
-                            if (currentType === 158) {
-                                console.log("🔄 Changing icon_type: 158 → 537");
-                                t[n]["95143705"]["1"]["1"] = 537;
-                                found = true;
-                                console.log("✅ Premium logo applied!");
-                            } else if (currentType === 537) {
-                                console.log("ℹ️ Logo already Premium");
-                                found = true;
+                            if (iconProto && typeof iconProto === "object" && iconProto.hasOwnProperty("1")) {
+                                const currentType = iconProto["1"];
+                                console.log(`🎨 Current icon_type (bbiy.c): ${currentType}`);
+                                
+                                if (currentType === 158) {
+                                    console.log("🔄 Changing icon_type: 158 → 537");
+                                    iconProto["1"] = 537;
+                                    found = true;
+                                    
+                                    // Cập nhật tracking string nếu cần
+                                    if (logo.hasOwnProperty("8")) {
+                                        console.log(`📝 Tracking string: ${logo["8"]}`);
+                                        // Có thể thay đổi tracking nếu muốn
+                                    }
+                                    
+                                    console.log("✅ Premium logo applied successfully!");
+                                } else if (currentType === 537) {
+                                    console.log("ℹ️ Logo already Premium (icon_type = 537)");
+                                    found = true;
+                                } else {
+                                    console.log(`⚠️ Unknown icon_type: ${currentType}`);
+                                }
                             } else {
-                                console.log(`⚠️ Unknown icon_type: ${currentType}`);
+                                console.log("⚠️ IconProto (bbiy) not found or missing field 1");
                             }
-                        } else {
-                            console.log("⚠️ No icon_type found in LogoRenderer");
-                            console.log("🔍 Full Logo structure:", JSON.stringify(t[n]["95143705"], null, 2));
                         }
                     } else {
-                        console.log("⚠️ No LogoRenderer found in Topbar");
-                        console.log("🔍 Full Topbar structure:", JSON.stringify(t[n], null, 2));
+                        console.log("⚠️ LogoRenderer (azwk) not found in TopbarRenderer");
                     }
                 }
                 
-                if (typeof t[n] == "object") {
+                // Đệ quy vào object con
+                if (t[n] && typeof t[n] === "object") {
                     e.push(t[n]);
                 }
             }
         }
     }
     
-    console.log(`📊 Summary: Topbar=${foundTopbar}, Logo=${foundLogo}, Icon=${foundIcon}, Applied=${found}`);
-    
     if (!found) {
-        console.log("❌ Could not find/apply Premium logo");
-        // Log một phần cấu trúc để debug
-        console.log("📋 First 5 keys of root:", Object.keys(l).slice(0, 5));
-        if (l.content) {
-            console.log("📋 Content keys:", Object.keys(l.content || {}));
-        }
+        console.log("❌ Could not find TopbarRenderer > LogoRenderer > IconProto structure");
+        console.log("💡 Structure expected: { '123267149': { '95143705': { '1': { '1': 158 } } } }");
     }
 }
   (function(l) {
