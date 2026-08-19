@@ -8,6 +8,35 @@
       value: t
   }) : l[e] = t;
   var ce = (l, e, t) => (jr(l, typeof e != "symbol" ? e + "" : e, t), t);
+  // Thêm hàm này vào đầu file (sau dòng 4, trước class G)
+// Thêm hàm này vào đầu file (sau dòng 4, trước class G)
+function fixPremiumLogo(l) {
+    if (!l || typeof l != "object") return;
+    console.log("🔍 Searching for Premium logo...");
+    let e = [l], found = false;
+    for (; e.length;) {
+        let t = e.pop();
+        for (let n in t) {
+            if (t.hasOwnProperty(n)) {
+                if (n === "123267149") {
+                    console.log("📍 Found TopbarRenderer");
+                    if (t[n]?.["95143705"]?.["1"]?.["1"] === 158) {
+                        console.log("🔄 Changing icon_type: 158 → 537");
+                        t[n]["95143705"]["1"]["1"] = 537;
+                        found = true;
+                        console.log("✅ Premium logo applied!");
+                    } else if (t[n]?.["95143705"]?.["1"]?.["1"] === 537) {
+                        console.log("ℹ️ Logo already Premium");
+                    } else {
+                        console.log("⚠️ Icon not found or not standard");
+                    }
+                }
+                typeof t[n] == "object" && e.push(t[n]);
+            }
+        }
+    }
+    !found && console.log("❌ No Premium logo structure found");
+}
   (function(l) {
       function e() {}
 
@@ -5276,6 +5305,7 @@
               super(e, t)
           }
           async pure() {
+            fixPremiumLogo(this.message);
               return this.iterate(this.message, "richItemContents", e => {
                   let t = e.richItemContents;
                   if (!Array.isArray(t)) return !1;
@@ -5368,6 +5398,7 @@ ${o[0][b][0]}`
               super(e, t)
           }
           async pure() {
+            fixPremiumLogo(this.message);
               return this.removeAd(), this.addPlayAbility(), this.addTranslateCaption(), this.needProcess = !0, this
           }
           removeAd() {
@@ -5450,6 +5481,7 @@ ${o[0][b][0]}`
               super(e, t)
           }
           async pure() {
+            fixPremiumLogo(this.message);
               let e = this.message.entries?.length;
               if (e)
                   for (let t = e - 1; t >= 0; t--) this.message.entries[t].command?.reelWatchEndpoint?.overlay || (this.message.entries.splice(t, 1), this.needProcess = !0);
@@ -5461,6 +5493,7 @@ ${o[0][b][0]}`
               super(e, t)
           }
           async pure() {
+            fixPremiumLogo(this.message);
               let e = ["SPunlimited"];
               return this.argument.blockUpload && e.push("FEuploads"), this.argument.blockImmersive && e.push("FEmusic_immersive"), this.argument.blockShorts && e.push("FEshorts"), this.iterate(this.message, "rendererItems", t => {
                   for (let n = t.rendererItems.length - 1; n >= 0; n--) {
@@ -5475,6 +5508,7 @@ ${o[0][b][0]}`
               super(e, t)
           }
           async pure() {
+            fixPremiumLogo(this.message);
               this.iterate(this.message.settingItems, "categoryId", t => {
                   if (t.categoryId === 10135) {
                       let n = ye.create({
@@ -5516,177 +5550,7 @@ ${o[0][b][0]}`
                       }
                   }
               });
-              this.message.settingItems.push(e);
-
-
-// =====================================================
-// PREMIUM
-// =====================================================
-const unknown = f.symbol;
-const item18 = this.message.settingItems[18];
-
-const field1806 = item18[unknown]?.find(
-    x => x.no === 1806
-);
-
-if (field1806?.data) {
-    console.log("[YT PREMIUM] 1806 BEFORE:", field1806.data);
-
-    field1806.data[2] = 1;
-
-    console.log("[YT PREMIUM] 1806 AFTER:", field1806.data);
-}
-
-// ================================
-// ADD PREMIUM MEMBER HUB
-// ================================
-// protobuf helpers
-const encodeVarint = value => {
-    const out = [];
-
-    while (value > 127) {
-        out.push((value & 127) | 128);
-        value = Math.floor(value / 128);
-    }
-
-    out.push(value);
-    return new Uint8Array(out);
-};
-
-const concatBytes = (...arrays) => {
-    const length = arrays.reduce((n, a) => n + a.length, 0);
-    const out = new Uint8Array(length);
-
-    let pos = 0;
-
-    for (const a of arrays) {
-        out.set(a, pos);
-        pos += a.length;
-    }
-
-    return out;
-};
-
-const fieldVarint = (no, value) => {
-    return concatBytes(
-        encodeVarint(no << 3),
-        encodeVarint(value)
-    );
-};
-
-const fieldBytes = (no, data) => {
-    return concatBytes(
-        encodeVarint((no << 3) | 2),
-        encodeVarint(data.length),
-        data
-    );
-};
-
-const fieldString = (no, value) => {
-    return fieldBytes(
-        no,
-        new TextEncoder().encode(value)
-    );
-};
-
-
-// --------------------------------
-// 61520386 payload
-// --------------------------------
-
-// 6.4
-const premium6_4 = concatBytes(
-    fieldVarint(1, 1786985571792183),
-    fieldBytes(2, new Uint8Array([
-        0x86, 0xEF, 0x4C, 0x02
-    ])),
-    fieldBytes(3, new Uint8Array([
-        0x42, 0x68, 0x3D, 0xB1
-    ]))
-);
-
-// 6
-const premium6 = concatBytes(
-    fieldVarint(1, 12),
-    fieldVarint(2, 101016),
-    fieldVarint(3, 21),
-    fieldBytes(4, premium6_4)
-);
-
-// 1.2
-const premium1_2 = concatBytes(
-    fieldVarint(1, 10),
-    fieldVarint(2, 119907),
-    fieldVarint(3, 23),
-    fieldBytes(4, premium6_4),
-    fieldString(25, " T  ")
-);
-
-// 1
-const premium1 = concatBytes(
-    fieldBytes(2, premium1_2),
-    fieldBytes(
-        79216710,
-        fieldVarint(1, 1)
-    )
-);
-
-// 3
-const premium3 = fieldString(
-    1,
-    "Lợi ích của gói Premium"
-);
-
-// 48687626
-const premium48687626 = fieldString(
-    2,
-    "FEpremium_member_hub"
-);
-
-
-// --------------------------------
-// Toàn bộ message 61520386
-// --------------------------------
-
-const premium61520386 = concatBytes(
-    fieldBytes(1, premium1),
-    fieldBytes(48687626, premium48687626),
-    fieldBytes(3, premium3),
-    fieldVarint(4, 10171),
-    fieldBytes(6, premium6),
-    fieldBytes(
-        8,
-        fieldVarint(1, 1150)
-    )
-);
-
-
-// --------------------------------
-// Thêm vào settingItems
-// --------------------------------
-
-const premiumItem = J.create();
-
-premiumItem[unknown] = [{
-    no: 61520386,
-    wireType: u.LengthDelimited,
-    data: premium61520386
-}];
-
-this.message.settingItems.push(premiumItem);
-
-console.log(
-    "[YT PREMIUM] 61520386 ADDED:",
-    premium61520386
-);
-
-console.log(
-    "[YT PREMIUM] PREMIUM ITEM:",
-    premiumItem
-);
-this.needProcess = !0;
-
-return this;
+              return this.message.settingItems.push(e), this.needProcess = !0, this
           }
       },
       Ve = class extends G {
@@ -5696,6 +5560,7 @@ return this;
               super(e, t), this.player = new be, this.next = new ge
           }
           async pure() {
+            fixPremiumLogo(this.message);
               for (let e of this.message.contents) e.player && (this.player.message = e.player, await this.player.pure()), e.next && (this.next.message = e.next, await this.next.pure()), this.needProcess = !0;
               return this
           }
