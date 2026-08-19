@@ -11,31 +11,87 @@
   // Thêm hàm này vào đầu file (sau dòng 4, trước class G)
 // Thêm hàm này vào đầu file (sau dòng 4, trước class G)
 function fixPremiumLogo(l) {
-    if (!l || typeof l != "object") return;
+    if (!l || typeof l != "object") {
+        console.log("❌ fixPremiumLogo: Invalid input");
+        return;
+    }
+    
     console.log("🔍 Searching for Premium logo...");
-    let e = [l], found = false;
+    
+    // Log tất cả các key cấp 1 để xem có gì
+    console.log("📋 Top-level keys:", Object.keys(l));
+    
+    let e = [l];
+    let found = false;
+    let depth = 0;
+    let foundTopbar = false;
+    let foundLogo = false;
+    let foundIcon = false;
+    
     for (; e.length;) {
         let t = e.pop();
+        depth++;
+        
         for (let n in t) {
             if (t.hasOwnProperty(n)) {
+                // Log tất cả các field số để debug
+                if (/^\d+$/.test(n) && typeof t[n] === 'object') {
+                    // console.log(`Field ${n} found at depth ${depth}`);
+                }
+                
                 if (n === "123267149") {
-                    console.log("📍 Found TopbarRenderer");
-                    if (t[n]?.["95143705"]?.["1"]?.["1"] === 158) {
-                        console.log("🔄 Changing icon_type: 158 → 537");
-                        t[n]["95143705"]["1"]["1"] = 537;
-                        found = true;
-                        console.log("✅ Premium logo applied!");
-                    } else if (t[n]?.["95143705"]?.["1"]?.["1"] === 537) {
-                        console.log("ℹ️ Logo already Premium");
+                    foundTopbar = true;
+                    console.log("📍 Found TopbarRenderer (field 123267149)");
+                    console.log("🔍 Topbar content:", Object.keys(t[n] || {}));
+                    
+                    if (t[n]?.["95143705"]) {
+                        foundLogo = true;
+                        console.log("📍 Found LogoRenderer (field 95143705)");
+                        console.log("🔍 Logo content:", Object.keys(t[n]["95143705"] || {}));
+                        
+                        if (t[n]["95143705"]?.["1"]?.["1"] !== undefined) {
+                            foundIcon = true;
+                            const currentType = t[n]["95143705"]["1"]["1"];
+                            console.log(`🎨 Current icon_type: ${currentType}`);
+                            
+                            if (currentType === 158) {
+                                console.log("🔄 Changing icon_type: 158 → 537");
+                                t[n]["95143705"]["1"]["1"] = 537;
+                                found = true;
+                                console.log("✅ Premium logo applied!");
+                            } else if (currentType === 537) {
+                                console.log("ℹ️ Logo already Premium");
+                                found = true;
+                            } else {
+                                console.log(`⚠️ Unknown icon_type: ${currentType}`);
+                            }
+                        } else {
+                            console.log("⚠️ No icon_type found in LogoRenderer");
+                            console.log("🔍 Full Logo structure:", JSON.stringify(t[n]["95143705"], null, 2));
+                        }
                     } else {
-                        console.log("⚠️ Icon not found or not standard");
+                        console.log("⚠️ No LogoRenderer found in Topbar");
+                        console.log("🔍 Full Topbar structure:", JSON.stringify(t[n], null, 2));
                     }
                 }
-                typeof t[n] == "object" && e.push(t[n]);
+                
+                if (typeof t[n] == "object") {
+                    e.push(t[n]);
+                }
             }
         }
     }
-    !found && console.log("❌ No Premium logo structure found");
+    
+    console.log(`📊 Summary: Topbar=${foundTopbar}, Logo=${foundLogo}, Icon=${foundIcon}, Applied=${found}`);
+    
+    if (!found) {
+        console.log("❌ Could not find/apply Premium logo");
+        // Log một phần cấu trúc để debug
+        console.log("📋 First 5 keys of root:", Object.keys(l).slice(0, 5));
+        if (l.content) {
+            console.log("📋 Content keys:", Object.keys(l.content || {}));
+        }
+    }
 }
   (function(l) {
       function e() {}
