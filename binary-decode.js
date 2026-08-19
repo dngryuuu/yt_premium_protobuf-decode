@@ -1,3 +1,4 @@
+// Build: 2025/3/30 17:50:34
 (() => {
   var Ar = Object.defineProperty;
   var jr = (l, e, t) => e in l ? Ar(l, e, {
@@ -5549,82 +5550,84 @@ ${o[0][b][0]}`
       let l = or(w.request.url);
       if (l) {
           let e = w.response.bodyBytes;
+          let isLogoPatched = false;
 
           // =========================================================
-          // [PATCH] TỰ ĐỘNG ĐỔI LOGO PREMIUM TẠI TẦNG BINARY PROTOBUF
+          // [PATCH] TÌM CHÍNH XÁC ID PROTOBUF VÀ ĐỔI LOGO PREMIUM
           // =========================================================
           try {
-              let isLogoPatched = false;
               let url = w.request.url || "";
               
               if (url.includes("browse") || url.includes("guide")) {
-                  console.log("[PremiumLogo] === BẮT ĐẦU QUÉT URL: " + url.split('?')[0] + " ===");
+                  console.log("[PremiumLogo] Bắt đầu xử lý URL: " + url.split('?')[0]);
                   
-                  // Tìm chuỗi Base64 "EgZ0b3BiYX" (chứa chữ "topbar")
-                  let pattern1 = [69, 103, 90, 48, 98, 51, 66, 104, 99, 105]; 
-                  // Tìm trực tiếp chữ "topbar" (phòng khi trả về raw byte)
-                  let pattern2 = [116, 111, 112, 98, 97, 114]; 
+                  // 1. Tag Protobuf của TopbarLogoRenderer (ID: 95143705) -> dịch ra byte là: [202, 241, 248, 234, 2]
+                  let topbarLogoTag = [202, 241, 248, 234, 2];
                   
-                  function findPattern(arr, pattern) {
-                      let results = [];
-                      for (let i = 0; i <= arr.length - pattern.length; i++) {
+                  // 2. Tag Protobuf của IconProto (Field 1, length 3, Field 1, Varint 158) -> [10, 3, 8, 158, 1]
+                  let iconProtoPattern = [10, 3, 8, 158, 1];
+
+                  // --- BƯỚC 1: Tìm qua TopbarLogoRenderer Tag ---
+                  for (let i = 0; i <= e.length - topbarLogoTag.length; i++) {
+                      let match = true;
+                      for (let j = 0; j < topbarLogoTag.length; j++) {
+                          if (e[i + j] !== topbarLogoTag[j]) { match = false; break; }
+                      }
+                      if (match) {
+                          console.log("[PremiumLogo] TÌM THẤY TopbarLogoRenderer (95143705) tại offset: " + i);
+                          
+                          // Quét 30 bytes tiếp theo để tìm byte 158, 1 (Tức là Icon Thường)
+                          let end = Math.min(e.length, i + 30);
+                          for (let k = i + topbarLogoTag.length; k < end; k++) {
+                              if (e[k] === 158 && e[k+1] === 1) {
+                                  e[k] = 153; // Đổi byte thành Icon Premium (537)
+                                  e[k+1] = 4;
+                                  isLogoPatched = true;
+                                  console.log("[PremiumLogo] [+] ĐÃ PATCH: 158 -> 537 (Từ TopbarLogoRenderer)");
+                                  break;
+                              }
+                          }
+                      }
+                  }
+
+                  // --- BƯỚC 2: Tìm trực tiếp cụm IconProto (Dự phòng) ---
+                  if (!isLogoPatched) {
+                      for (let i = 0; i <= e.length - iconProtoPattern.length; i++) {
                           let match = true;
-                          for (let j = 0; j < pattern.length; j++) {
-                              if (arr[i + j] !== pattern[j]) { match = false; break; }
+                          for (let j = 0; j < iconProtoPattern.length; j++) {
+                              if (e[i + j] !== iconProtoPattern[j]) { match = false; break; }
                           }
-                          if (match) results.push(i);
-                      }
-                      return results;
-                  }
-
-                  let matches = findPattern(e, pattern1).concat(findPattern(e, pattern2));
-                  console.log("[PremiumLogo] Đã tìm thấy " + matches.length + " vị trí chứa từ khóa 'topbar'.");
-
-                  for (let i = 0; i < matches.length; i++) {
-                      let pos = matches[i];
-                      console.log("[PremiumLogo] -> Đang quét các byte lân cận vị trí: " + pos);
-                      
-                      // Quét lùi và tiến xung quanh vị trí tìm thấy 150 bytes
-                      let start = Math.max(0, pos - 150);
-                      let end = Math.min(e.length, pos + 150);
-                      let patchedHere = false;
-                      
-                      for (let k = start; k < end; k++) {
-                          // Trong Varint: 158 được mã hóa thành 2 byte là 158 và 1 (0x9E 0x01)
-                          if (e[k] === 158 && e[k+1] === 1) {
-                              console.log("[PremiumLogo] ---> TÌM THẤY byte 158, 1 tại offset: " + k);
-                              // Thay thế thành 537 (Varint: 153 và 4)
-                              e[k] = 153; 
-                              e[k+1] = 4;
+                          if (match) {
+                              console.log("[PremiumLogo] TÌM THẤY khối IconProto tại offset: " + i);
+                              
+                              // iconProtoPattern[3] là 158, [4] là 1 -> Đè byte mới vào
+                              e[i + 3] = 153;
+                              e[i + 4] = 4;
                               isLogoPatched = true;
-                              patchedHere = true;
-                              console.log("[PremiumLogo] ---> ĐÃ GHI ĐÈ THÀNH CÔNG 158 -> 537 (Logo Premium)!");
-                              break; // Xong block này, thoát vòng lặp nhỏ
+                              console.log("[PremiumLogo] [+] ĐÃ PATCH: 158 -> 537 (Từ khối IconProto)");
                           }
                       }
-                      if (!patchedHere) {
-                          console.log("[PremiumLogo] ---> Không tìm thấy byte [158, 1] ở gần offset " + pos);
-                      }
                   }
-              }
-
-              // Ép script phải gọi hàm toBinary để trả về data đã sửa
-              if (isLogoPatched) {
-                  l.needProcess = true;
-                  console.log("[PremiumLogo] Đã bật cờ needProcess = true để lưu thay đổi.");
               }
           } catch (err) {
-              console.log("[PremiumLogo] LỖI TRONG QUÁ TRÌNH PATCH LOGO: " + err);
+              console.log("[PremiumLogo] LỖI: " + err);
           }
           // =========================================================
 
           w.timeStart("fromBinary");
           l.fromBinary(e);
           w.timeEnd("fromBinary");
+          
           w.timeStart("modify");
           await l.pure();
           w.timeEnd("modify");
           
+          // Sau khi chạy pure() xong, nếu logo đã được patch thì bắt buộc bật cờ lưu dữ liệu
+          if (isLogoPatched) {
+              l.needProcess = true;
+              console.log("[PremiumLogo] Đã cập nhật cờ needProcess = true để lưu thay đổi.");
+          }
+
           l.done();
       } else {
           w.msg("YouTube Enhance", "\u811A\u672C\u9700\u8981\u66F4\u65B0", "\u5916\u90E8\u8D44\u6E90 -> \u5168\u90E8\u66F4\u65B0");
