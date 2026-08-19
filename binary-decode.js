@@ -1,4 +1,3 @@
-// Build: 2025/3/30 17:50:34
 (() => {
   var Ar = Object.defineProperty;
   var jr = (l, e, t) => e in l ? Ar(l, e, {
@@ -5550,31 +5549,72 @@ ${o[0][b][0]}`
       let l = or(w.request.url);
       if (l) {
           let e = w.response.bodyBytes;
-          let isLogoPatched = false;
-          if (w.request.url.includes("browse") || w.request.url.includes("guide")) {
-              // Tìm chuỗi Base64 tracking "EgZ0b3BiYX" (nghĩa là "topbar")
-              let pattern = [69, 103, 90, 48, 98, 51, 66, 104, 99, 105]; 
-              for (let i = 0; i < e.length - pattern.length; i++) {
-                  let match = true;
-                  for (let j = 0; j < pattern.length; j++) {
-                      if (e[i + j] !== pattern[j]) { 
-                          match = false; 
-                          break; 
+
+          // =========================================================
+          // [PATCH] TỰ ĐỘNG ĐỔI LOGO PREMIUM TẠI TẦNG BINARY PROTOBUF
+          // =========================================================
+          try {
+              let isLogoPatched = false;
+              let url = w.request.url || "";
+              
+              if (url.includes("browse") || url.includes("guide")) {
+                  console.log("[PremiumLogo] === BẮT ĐẦU QUÉT URL: " + url.split('?')[0] + " ===");
+                  
+                  // Tìm chuỗi Base64 "EgZ0b3BiYX" (chứa chữ "topbar")
+                  let pattern1 = [69, 103, 90, 48, 98, 51, 66, 104, 99, 105]; 
+                  // Tìm trực tiếp chữ "topbar" (phòng khi trả về raw byte)
+                  let pattern2 = [116, 111, 112, 98, 97, 114]; 
+                  
+                  function findPattern(arr, pattern) {
+                      let results = [];
+                      for (let i = 0; i <= arr.length - pattern.length; i++) {
+                          let match = true;
+                          for (let j = 0; j < pattern.length; j++) {
+                              if (arr[i + j] !== pattern[j]) { match = false; break; }
+                          }
+                          if (match) results.push(i);
                       }
+                      return results;
                   }
-                  if (match) {
-                      // Khi tìm thấy context topbar, lùi lại tối đa 100 bytes để tìm icon_type = 158
-                      let start = Math.max(0, i - 100);
-                      for (let k = i; k >= start; k--) {
-                          if (e[k] === 158 && e[k+1] === 1) { // 158, 1 chính là 0x9e 0x01
-                              e[k] = 153; // Đổi thành 153, 4 (0x99 0x04 tương đương số 537)
+
+                  let matches = findPattern(e, pattern1).concat(findPattern(e, pattern2));
+                  console.log("[PremiumLogo] Đã tìm thấy " + matches.length + " vị trí chứa từ khóa 'topbar'.");
+
+                  for (let i = 0; i < matches.length; i++) {
+                      let pos = matches[i];
+                      console.log("[PremiumLogo] -> Đang quét các byte lân cận vị trí: " + pos);
+                      
+                      // Quét lùi và tiến xung quanh vị trí tìm thấy 150 bytes
+                      let start = Math.max(0, pos - 150);
+                      let end = Math.min(e.length, pos + 150);
+                      let patchedHere = false;
+                      
+                      for (let k = start; k < end; k++) {
+                          // Trong Varint: 158 được mã hóa thành 2 byte là 158 và 1 (0x9E 0x01)
+                          if (e[k] === 158 && e[k+1] === 1) {
+                              console.log("[PremiumLogo] ---> TÌM THẤY byte 158, 1 tại offset: " + k);
+                              // Thay thế thành 537 (Varint: 153 và 4)
+                              e[k] = 153; 
                               e[k+1] = 4;
                               isLogoPatched = true;
-                              break; 
+                              patchedHere = true;
+                              console.log("[PremiumLogo] ---> ĐÃ GHI ĐÈ THÀNH CÔNG 158 -> 537 (Logo Premium)!");
+                              break; // Xong block này, thoát vòng lặp nhỏ
                           }
+                      }
+                      if (!patchedHere) {
+                          console.log("[PremiumLogo] ---> Không tìm thấy byte [158, 1] ở gần offset " + pos);
                       }
                   }
               }
+
+              // Ép script phải gọi hàm toBinary để trả về data đã sửa
+              if (isLogoPatched) {
+                  l.needProcess = true;
+                  console.log("[PremiumLogo] Đã bật cờ needProcess = true để lưu thay đổi.");
+              }
+          } catch (err) {
+              console.log("[PremiumLogo] LỖI TRONG QUÁ TRÌNH PATCH LOGO: " + err);
           }
           // =========================================================
 
@@ -5585,13 +5625,11 @@ ${o[0][b][0]}`
           await l.pure();
           w.timeEnd("modify");
           
-          // Bắt buộc script ghi đè lại response nếu logo đã được patch
-          if (isLogoPatched) {
-              l.needProcess = true;
-          }
-          
           l.done();
-      } else w.msg("YouTube Enhance", "\u811A\u672C\u9700\u8981\u66F4\u65B0", "\u5916\u90E8\u8D44\u6E90 -> \u5168\u90E8\u66F4\u65B0"), w.exit()
+      } else {
+          w.msg("YouTube Enhance", "\u811A\u672C\u9700\u8981\u66F4\u65B0", "\u5916\u90E8\u8D44\u6E90 -> \u5168\u90E8\u66F4\u65B0");
+          w.exit();
+      }
   }
   qr().catch(l => {
       console.log(l.message), w.exit()
