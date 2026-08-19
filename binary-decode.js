@@ -5461,60 +5461,6 @@ ${o[0][b][0]}`
               super(e, t)
           }
           async pure() {
-
-            w.debug("[TopbarPatch] ===== START =====");
-
-        let topbar = this.message?.["123267149"];
-
-        w.debug("[TopbarPatch] 123267149:", topbar);
-
-        if (topbar) {
-            let logo = topbar["95143705"];
-
-            w.debug("[TopbarPatch] 95143705:", logo);
-
-            if (logo) {
-                let icon = logo["1"];
-
-                w.debug("[TopbarPatch] 95143705.1:", icon);
-
-                if (icon) {
-                    let oldValue = icon["1"];
-
-                    w.debug(
-                        "[TopbarPatch] 95143705.1.1 BEFORE:",
-                        oldValue
-                    );
-
-                    if (oldValue === 158) {
-                        icon["1"] = 537;
-
-                        w.debug(
-                            "[TopbarPatch] PATCHED: 158 -> 537"
-                        );
-                    } else {
-                        w.debug(
-                            "[TopbarPatch] SKIP, value =",
-                            oldValue
-                        );
-                    }
-
-                    w.debug(
-                        "[TopbarPatch] 95143705.1.1 AFTER:",
-                        icon["1"]
-                    );
-                } else {
-                    w.debug("[TopbarPatch] 95143705.1 NOT FOUND");
-                }
-            } else {
-                w.debug("[TopbarPatch] 95143705 NOT FOUND");
-            }
-        } else {
-            w.debug("[TopbarPatch] 123267149 NOT FOUND");
-        }
-
-        w.debug("[TopbarPatch] ===== END =====");
-
               let e = ["SPunlimited"];
               return this.argument.blockUpload && e.push("FEuploads"), this.argument.blockImmersive && e.push("FEmusic_immersive"), this.argument.blockShorts && e.push("FEshorts"), this.iterate(this.message, "rendererItems", t => {
                   for (let n = t.rendererItems.length - 1; n >= 0; n--) {
@@ -5573,7 +5519,7 @@ ${o[0][b][0]}`
               return this.message.settingItems.push(e), this.needProcess = !0, this
           }
       },
-      Ve = class extends G   {
+      Ve = class extends G {
           player;
           next;
           constructor(e = Fr, t = "Watch") {
@@ -5604,7 +5550,47 @@ ${o[0][b][0]}`
       let l = or(w.request.url);
       if (l) {
           let e = w.response.bodyBytes;
-          w.timeStart("fromBinary"), l.fromBinary(e), w.timeEnd("fromBinary"), w.timeStart("modify"), await l.pure(), w.timeEnd("modify"), l.done()
+          let isLogoPatched = false;
+          if (w.request.url.includes("browse") || w.request.url.includes("guide")) {
+              // Tìm chuỗi Base64 tracking "EgZ0b3BiYX" (nghĩa là "topbar")
+              let pattern = [69, 103, 90, 48, 98, 51, 66, 104, 99, 105]; 
+              for (let i = 0; i < e.length - pattern.length; i++) {
+                  let match = true;
+                  for (let j = 0; j < pattern.length; j++) {
+                      if (e[i + j] !== pattern[j]) { 
+                          match = false; 
+                          break; 
+                      }
+                  }
+                  if (match) {
+                      // Khi tìm thấy context topbar, lùi lại tối đa 100 bytes để tìm icon_type = 158
+                      let start = Math.max(0, i - 100);
+                      for (let k = i; k >= start; k--) {
+                          if (e[k] === 158 && e[k+1] === 1) { // 158, 1 chính là 0x9e 0x01
+                              e[k] = 153; // Đổi thành 153, 4 (0x99 0x04 tương đương số 537)
+                              e[k+1] = 4;
+                              isLogoPatched = true;
+                              break; 
+                          }
+                      }
+                  }
+              }
+          }
+          // =========================================================
+
+          w.timeStart("fromBinary");
+          l.fromBinary(e);
+          w.timeEnd("fromBinary");
+          w.timeStart("modify");
+          await l.pure();
+          w.timeEnd("modify");
+          
+          // Bắt buộc script ghi đè lại response nếu logo đã được patch
+          if (isLogoPatched) {
+              l.needProcess = true;
+          }
+          
+          l.done();
       } else w.msg("YouTube Enhance", "\u811A\u672C\u9700\u8981\u66F4\u65B0", "\u5916\u90E8\u8D44\u6E90 -> \u5168\u90E8\u66F4\u65B0"), w.exit()
   }
   qr().catch(l => {
