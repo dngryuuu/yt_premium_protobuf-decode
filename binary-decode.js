@@ -7,116 +7,113 @@
       value: t
   }) : l[e] = t;
   var ce = (l, e, t) => (jr(l, typeof e != "symbol" ? e + "" : e, t), t);
-  // Thêm hàm này vào đầu file (sau dòng 4, trước class G)
-// Thêm hàm này vào đầu file (sau dòng 4, trước class G)
-function fixPremiumLogo(l) {
-    // Kiểm tra input kỹ hơn
-    if (!l) {
-        console.log("❌ fixPremiumLogo: Input is null/undefined");
-        return;
-    }
-    
-    if (typeof l !== "object") {
-        console.log(`❌ fixPremiumLogo: Input is not an object, type: ${typeof l}`);
-        return;
-    }
-    
-    if (Array.isArray(l)) {
-        console.log("❌ fixPremiumLogo: Input is an array, not an object");
-        return;
-    }
-    
-    if (Object.keys(l).length === 0) {
-        console.log("❌ fixPremiumLogo: Input is an empty object");
+  function fixPremiumLogo(l) {
+    if (!l || typeof l != "object") {
+        console.log("❌ fixPremiumLogo: Invalid input");
         return;
     }
     
     console.log("🔍 Searching for Premium logo...");
     let found = false;
-    let e = [l];
-    let depth = 0;
     
-    for (; e.length;) {
-        let t = e.pop();
-        depth++;
+    // Hàm đệ quy duyệt tất cả object
+    function searchAndFix(obj, path = '') {
+        if (!obj || typeof obj !== 'object') return;
         
-        // Bỏ qua nếu t không phải object
-        if (!t || typeof t !== "object" || Array.isArray(t)) continue;
-        
-        for (let n in t) {
-            if (t.hasOwnProperty(n)) {
-                // Tìm TopbarRenderer (field 123267149)
-                if (n === "123267149") {
-                    console.log(`📍 Found TopbarRenderer at depth ${depth}`);
-                    const topbar = t[n];
-                    
-                    // Kiểm tra topbar tồn tại và là object
-                    if (topbar && typeof topbar === "object" && !Array.isArray(topbar)) {
-                        // Tìm LogoRenderer (field 95143705)
-                        if (topbar.hasOwnProperty("95143705")) {
-                            console.log("📍 Found LogoRenderer (azwk)");
-                            const logo = topbar["95143705"];
-                            
-                            // Kiểm tra logo tồn tại và là object
-                            if (logo && typeof logo === "object" && !Array.isArray(logo)) {
-                                // Lấy IconProto (field 1)
-                                if (logo.hasOwnProperty("1")) {
-                                    const iconProto = logo["1"];
-                                    
-                                    // Kiểm tra iconProto tồn tại và là object
-                                    if (iconProto && typeof iconProto === "object" && !Array.isArray(iconProto)) {
-                                        if (iconProto.hasOwnProperty("1")) {
-                                            const currentType = iconProto["1"];
-                                            console.log(`🎨 Current icon_type (bbiy.c): ${currentType}`);
-                                            
-                                            if (currentType === 158) {
-                                                console.log("🔄 Changing icon_type: 158 → 537");
-                                                iconProto["1"] = 537;
-                                                found = true;
-                                                
-                                                // Kiểm tra tracking string
-                                                if (logo.hasOwnProperty("8")) {
-                                                    console.log(`📝 Tracking string: ${logo["8"]}`);
-                                                }
-                                                
-                                                console.log("✅ Premium logo applied successfully!");
-                                            } else if (currentType === 537) {
-                                                console.log("ℹ️ Logo already Premium (icon_type = 537)");
-                                                found = true;
-                                            } else {
-                                                console.log(`⚠️ Unknown icon_type: ${currentType}`);
-                                            }
-                                        } else {
-                                            console.log("⚠️ IconProto missing field '1'");
-                                        }
-                                    } else {
-                                        console.log("⚠️ IconProto is invalid or not an object");
-                                    }
-                                } else {
-                                    console.log("⚠️ LogoRenderer missing field '1' (IconProto)");
-                                }
-                            } else {
-                                console.log("⚠️ LogoRenderer is invalid or not an object");
+        // Kiểm tra nếu đây là unknown field (có no, wireType, data)
+        if (obj.hasOwnProperty('no') && obj.hasOwnProperty('wireType') && obj.hasOwnProperty('data')) {
+            // Field number 123267149 là TopbarRenderer
+            if (obj.no === 123267149 && obj.wireType === 2) {
+                console.log(`📍 Found TopbarRenderer (field ${obj.no}) at ${path}`);
+                try {
+                    // data là Uint8Array, cần parse tiếp
+                    // Parse data thành object để tìm LogoRenderer (95143705)
+                    const parsed = parseUnknownData(obj.data);
+                    if (parsed && parsed.hasOwnProperty('95143705')) {
+                        const logo = parsed['95143705'];
+                        if (logo && logo.hasOwnProperty('1') && logo['1'].hasOwnProperty('1')) {
+                            const currentType = logo['1']['1'];
+                            console.log(`🎨 Current icon_type: ${currentType}`);
+                            if (currentType === 158) {
+                                console.log("🔄 Changing icon_type: 158 → 537");
+                                logo['1']['1'] = 537;
+                                found = true;
+                                // Cần ghi lại data đã sửa
+                                obj.data = rebuildUnknownData(parsed);
+                                console.log("✅ Premium logo applied!");
+                            } else if (currentType === 537) {
+                                console.log("ℹ️ Logo already Premium");
+                                found = true;
                             }
-                        } else {
-                            console.log("⚠️ TopbarRenderer missing field '95143705' (LogoRenderer)");
                         }
-                    } else {
-                        console.log("⚠️ TopbarRenderer is invalid or not an object");
                     }
+                } catch(e) {
+                    console.log(`⚠️ Error parsing unknown data: ${e.message}`);
                 }
-                
-                // Đệ quy vào object con
-                if (t[n] && typeof t[n] === "object" && !Array.isArray(t[n])) {
-                    e.push(t[n]);
-                }
+            }
+            return;
+        }
+        
+        // Đệ quy qua tất cả properties
+        for (let key in obj) {
+            if (obj.hasOwnProperty(key) && typeof obj[key] === 'object') {
+                searchAndFix(obj[key], path + '.' + key);
             }
         }
     }
     
+    // Hàm parse unknown data (Uint8Array -> object)
+    function parseUnknownData(data) {
+        try {
+            // Dùng reader để parse
+            const reader = new Ke(data);
+            const result = {};
+            while (reader.pos < data.length) {
+                const [fieldNo, wireType] = reader.tag();
+                if (wireType === 2) { // LengthDelimited
+                    const bytes = reader.bytes();
+                    // Parse tiếp nếu là message
+                    result[fieldNo] = parseUnknownData(bytes);
+                } else if (wireType === 0) { // Varint
+                    result[fieldNo] = reader.uint32();
+                } else if (wireType === 1) { // Bit64
+                    result[fieldNo] = reader.fixed64();
+                } else if (wireType === 5) { // Bit32
+                    result[fieldNo] = reader.fixed32();
+                }
+            }
+            return result;
+        } catch(e) {
+            return null;
+        }
+    }
+    
+    // Hàm rebuild unknown data từ object
+    function rebuildUnknownData(obj) {
+        const writer = new Je();
+        for (let key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                const fieldNo = parseInt(key);
+                const value = obj[key];
+                if (typeof value === 'object') {
+                    writer.tag(fieldNo, 2);
+                    const subData = rebuildUnknownData(value);
+                    writer.uint32(subData.length);
+                    writer.raw(subData);
+                } else if (typeof value === 'number') {
+                    writer.tag(fieldNo, 0);
+                    writer.uint32(value);
+                }
+            }
+        }
+        return writer.finish();
+    }
+    
+    // Bắt đầu tìm kiếm
+    searchAndFix(l);
+    
     if (!found) {
-        console.log("❌ Could not find TopbarRenderer > LogoRenderer > IconProto structure");
-        console.log("💡 Structure expected: { '123267149': { '95143705': { '1': { '1': 158 } } } }");
+        console.log("❌ Could not find/apply Premium logo");
     }
 }
   (function(l) {
